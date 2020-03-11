@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+
+{% block title %}chartjs.html{% endblock %}
+
+{% block extra-style %}
+    <style>
+        body {
+            text-align: center;
+            background-color: #ddd;
+        }
+        .inputBox {
+            margin: auto;
+            width: 70%;
+            background: white;
+            height: 50px;
+            border-radius: 50px;
+            line-height: 50px;
+        }
+        .inputBox .name {
+            border-style: none;
+            border-bottom: 1px solid #ddd;
+            width: 90px;
+            padding-left: 20px;
+            line-height: 20px;
+        }
+        .inputBox .item {
+            border-style: none;
+            border-bottom: 1px solid #ddd;
+            width: 400px;
+            margin-left: 50px;
+            padding-left: 20px;
+            line-height: 20px;
+        }
+        .todoList {
+            list-style: none;
+            padding: 10px 0;
+            text-align: left;
+        }
+        .todoList li {
+            display: flex;
+            height: 50px;
+            line-height: 50px;
+            margin: 0.5rem 0;
+            padding: 0 0.9rem;
+            background: white;
+            border-radius: 5px;
+        }
+        .removeBtn {
+            margin-left: auto;
+            font-size: 20px;
+        }
+        .removeBtn:hover {
+            color:red;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div id = 'app'>
+        <button v-on:click="requestData()" class="btn btn-primary btn-sm">requestData</button>
+        <!--
+        <div class="inputBox">
+            <input class="name" v-model.trim="name" type="text" placeholder="name ...">
+            <input class="item" v-model.trim="todo" type="text" 
+                v-on:keyup.enter="add_todo()" placeholder="type anything welcomed ...">
+            <button v-on:click="add_todo()" class="btn btn-primary btn-sm">ADD</button>
+        </div>
+
+        <ul class="todoList">
+            <li v-for="(todo, index) in todoList">
+                <span>[[ todo.name ]]:: [[todo.todo]]</span>
+                <span class="removeBtn" v-on:click="remove_todo(todo, index)">x</span>
+            </li>
+        </ul>
+        -->
+        
+        <canvas id="myChart"></canvas>
+        
+    </div>
+{% endblock %}
+
+{% block extra-script %}
+    <script src="https://unpkg.com/vue/dist/vue.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
+    <script>
+        axios.defaults.xsrfCookieName = 'csrftoken'
+        axios.defaults.xsrfHeaderName = 'X-CSRFToken'
+       
+        //var GLOBAL = []
+
+        var vm = new Vue({
+            delimiters: ['[[', ']]'],
+            el: '#app',
+            data: {
+                valueList:[],
+                GLOBAL : [],
+                operateFinish:false,
+            },
+            methods:{
+                requestData: function(){
+                    console.log("requestData()...");
+            
+                    var vm = this;
+                    axios.get('/webApp/kr/read/')
+                        .then(function (res){
+                            console.log("GET RES", res);
+                            console.log(res.data.length)
+                            for(var i=0; i<res.data.length; i++) {
+                                console.log(res.data[i])
+                                vm.valueList.push({id: res.data[i].id, date: res.data[i].date, language: res.data[i].language, mainAction: res.data[i].mainAction, count: res.data[i].count, rate: res.data[i].rate});
+                                if (i < 6){
+                                    vm.GLOBAL.push(res.data[i].count);
+                                }
+                            }
+                            operateFinish = true;
+                            //vm.valueList.push({id: res.data.id, name: res.data.name, todo: res.data.todo});
+                        })
+                        .catch(function (err){
+                            console.log("GET ERR", err);
+                        })
+                    //axios 비동기로 처리되서 값 받아오기전에 아래 코드 실행되서 값이 안나오는것처럼 보이게 됌
+                    //console.log(vm.valueList[0]);
+                    //console.log("???");
+                },
+            },
+        })
+        setTimeout(function() {
+            console.log('Works!');
+            var ctx = document.getElementById('myChart').getContext('2d');
+            var myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+                    datasets: [{
+                        label: '# of Votes',
+                        data: vm.GLOBAL,
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.2)',
+                            'rgba(54, 162, 235, 0.2)',
+                            'rgba(255, 206, 86, 0.2)',
+                            'rgba(75, 192, 192, 0.2)',
+                            'rgba(153, 102, 255, 0.2)',
+                            'rgba(255, 159, 64, 0.2)'
+                        ],
+                        borderColor: [
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(153, 102, 255, 1)',
+                            'rgba(255, 159, 64, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        yAxes: [{
+                            ticks: {
+                                beginAtZero: true
+                            }
+                        }]
+                    }
+                }
+            });
+        }, 5000);
+        console.log(vm.GLOBAL);
+
+    </script>
+{% endblock %}
